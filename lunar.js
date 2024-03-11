@@ -4,6 +4,17 @@ let canvas = null
 let ctx = null
 let inputBuffer = {}
 let COORD_SIZE = 0
+let LUNAR_SIZE = 50
+
+//control keys
+let myKeyboard = Input.Keyboard();
+let rotateLeftKey = 'ArrowLeft'
+let rotateRightKey = 'ArrowRight'
+let thrustKey = 'ArrowUp'
+let momentum = 0
+
+//image variables
+let lunarLander = null
 
 //terrain variable
 const maxHieght = 990
@@ -21,6 +32,11 @@ function initialize() {
     canvas = document.getElementById('lunarCanvas');
     COORD_SIZE=canvas.width
     ctx = canvas.getContext('2d');
+    lunarLander = initializeLander({
+        imageSource: './Static/cartoonMoonLander.png',
+        location: {x: 100, y:100},
+        rotation: {rotate: 0}
+    })
  
 
 
@@ -33,10 +49,42 @@ function initialize() {
     requestAnimationFrame(gameLoop)
 }
 
+function initializeLander(spec){
+    let image = new Image()
+    image.isReady = false
+
+    function rotateLeft() {
+        spec.rotation.rotate -= Math.PI / 180 * 4
+    }
+    function rotateRight() {
+        spec.rotation.rotate += Math.PI / 180 * 4
+    }
+    function thrust() {
+        const velocityX = (Math.sin(spec.rotation.rotate) )* 2; // Adjust THRUST_SPEED as needed
+        const velocityY = Math.cos(spec.rotation.rotate) * -2;
+        spec.location.x += velocityX;
+        spec.location.y += velocityY;
+    }
+
+    image.onload = function () {
+        this.isReady = true
+    }
+    image.src=spec.imageSource
+    return {
+        rotateLeft: rotateLeft,
+        rotateRight: rotateRight,
+        thrust: thrust,
+        location: spec.location,
+        image: image,
+        rotation: spec.rotation
+        
+    }
+}
+
 function gameLoop(timestamp) {
     
     let elapsedTime = timestamp - lastTimestamp;
-    processInput()
+    processInput(elapsedTime)
     update(elapsedTime)
     render(elapsedTime)
 
@@ -44,25 +92,9 @@ function gameLoop(timestamp) {
 }
 
 
-function processInput() {
-    for (input in inputBuffer) {
-        // move functions
-        if (inputBuffer[input] === "ArrowDown" || inputBuffer[input] === "ArrowUp" || inputBuffer[input] === "ArrowRight" || inputBuffer[input] === "ArrowLeft" || inputBuffer[input] === "s" || inputBuffer[input] === "w" || inputBuffer[input] === "a" || inputBuffer[input] === "d") {
-            moveCharacter(inputBuffer[input], myCharacter)
-        } 
-
-        else if (inputBuffer[input] === "b") {
-            toggleBreadCrumbs() 
-        }
-        else if (inputBuffer[input] === 'p') {
-            toggleShortestPath()
-        }
-        else if (inputBuffer[input] === 'h') {
-            toggleHint()
-        }
-
-    }
-    inputBuffer = {}
+function processInput(elapsedTime) {
+    moveLander()
+    myKeyboard.update(elapsedTime)
 }
 
 function update(elapsedTime) {
@@ -71,6 +103,24 @@ function update(elapsedTime) {
 
 function render(elapsedTime) {
     drawTerrain(terrainPoints, safeZone);
+    renderImage(lunarLander)
+}
+
+function renderImage(object) {
+    if(object.image.isReady) {
+        ctx.save()
+        ctx.translate(object.location.x, object.location.y);
+        ctx.rotate(object.rotation.rotate);
+        ctx.translate(-object.location.x, -object.location.y);
+        ctx.drawImage(
+            object.image,
+            object.location.x - LUNAR_SIZE / 2,
+            object.location.y - LUNAR_SIZE / 2,
+            LUNAR_SIZE,
+            LUNAR_SIZE
+        )
+        ctx.restore()
+    }
 }
 
 function getRandom(min, max) {
@@ -158,3 +208,17 @@ function generateTerrain(start, end, numIterations, s,) {
 
     return points;
 }
+
+function moveLander (lander) {
+    if(myKeyboard.keys.hasOwnProperty(rotateLeftKey)){
+        myKeyboard.registerCommand(rotateLeftKey, lunarLander.rotateLeft())
+    }
+    if(myKeyboard.keys.hasOwnProperty(rotateRightKey)){
+        myKeyboard.registerCommand(rotateRightKey, lunarLander.rotateRight())
+    }
+    if(myKeyboard.keys.hasOwnProperty(thrustKey)){
+        myKeyboard.registerCommand(thrustKey, lunarLander.thrust())
+    }
+
+}
+
