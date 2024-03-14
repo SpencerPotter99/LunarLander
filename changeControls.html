@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lunar Game</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+        let MyGame = {
+            systems: {},
+            render: {},
+            gameState: "changeControls"
+        };
+    </script>
+    <script src = "Scripts/changeControls.js"></script>
+    <script src = "Scripts/input.js"></script>
+    <script src="Scripts/lunar.js"></script>
+
+</head>
+<body >
+    <div class="menu">
+        <h1 >Change Controls</h1>
+        <button class="buttons"  onclick="window.location.href='lunarGame.html'">
+            <h4>New Game</h4>
+        </button>
+        <div>
+            <label for="thrustKeyInput">Thrust Key:</label>
+            <input type="text" id="thrustKeyInput" name="thrustKeyInput" value="ArrowUp">
+            <button onclick="updateThrustKey()">Update Thrust Key</button>
+        </div>
+        <div>
+            <label for="rotateLeftKeyInput">Rotate Left Key:</label>
+            <input type="text" id="rotateLeftKeyInput" name="rotateLeftKeyInput" value="ArrowLeft">
+            <button onclick="updateRotationLeftKey()">Update Left Rotation Key</button>
+        </div>
+        <div>
+            <label for="rotateRightKeyInput">Rotate Right Key:</label>
+            <input type="text" id="rotateRightKeyInput" name="rotateRightKeyInput" value="ArrowRight">
+            <button onclick="updateRotationRightKey()">Update Right Rotation Key</button>
+        </div>
+
+        
+        <div>
+            <button onclick="resetControls()">Reset the Controls</button>
+        </div>
+
+    </div>
+</body>
+</html>

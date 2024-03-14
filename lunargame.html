@@ -6,13 +6,24 @@
     <title>Lunar Game</title>
     <link rel="stylesheet" href="style.css">
 
+    
 </head>
-<body onload = "initialize()">
+<body>
     <div class="lunar-div" id="main-game">
-    <canvas id="lunarCanvas" width="1000" height="1000" style = "width: 100vh; height: 90%;"></canvas>
+    <canvas id="lunarCanvas" width="1000" height="1000" style = "width: 90vw; height: 90vh;"></canvas>
     </div>
-    <script src = "input.js"></script>
-    <script src="lunar.js"></script>
+    <script>
+        let MyGame = {
+            systems: {},
+            render: {},
+            gameState: 'game'
+        };
+    </script>
+        <script src="Scripts/graphics.js"></script>
+        <script src="Scripts/particleSystem.js"></script>
+        <script src="Scripts/renderParticle.js"></script>
+        <script src = "Scripts/input.js"></script>
+        <script src="Scripts/lunar.js"></script>
 
 </body>
 </html>
