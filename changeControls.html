@@ -5,19 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lunar Game</title>
     <link rel="stylesheet" href="style.css">
-    <script>
-        let MyGame = {
-            systems: {},
-            render: {},
-            gameState: "changeControls"
-        };
-    </script>
+
     <script src = "Scripts/changeControls.js"></script>
-    <script src = "Scripts/input.js"></script>
-    <script src="Scripts/lunar.js"></script>
 
 </head>
-<body >
+<body onload="initializeMovementChange()">
     <div class="menu">
         <h1 >Change Controls</h1>
         <button class="buttons"  onclick="window.location.href='lunarGame.html'">

@@ -3,27 +3,46 @@ MyGame.systems.ParticleSystem = function(spec) {
     let nextName = 1;       // Unique identifier for the next particle
     let particles = {};
 
+    function clearParticles() {
+        particles = {}
+    }
+
     //------------------------------------------------------------------
     //
     // This creates one new particle
     //
     //------------------------------------------------------------------
-    function create(startPosition) {
+    function create(lunarLander) {
+        const offsetX = 0; // Adjust if necessary
+        const offsetY = 10;
+        const rotatedOffsetX = offsetX * Math.cos(lunarLander.rotation.rotate) - offsetY * Math.sin(lunarLander.rotation.rotate);
+        const rotatedOffsetY = offsetX * Math.sin(lunarLander.rotation.rotate) + offsetY * Math.cos(lunarLander.rotation.rotate);
         let p = {
-                center: {x: startPosition.x, y: startPosition.y},
+                center: {x: lunarLander.location.x + rotatedOffsetX, y: lunarLander.location.y + rotatedOffsetY},
                 size: { x: spec.size.x, y: spec.size.y },
-                direction: nextCircleVector(),
+                direction: nextCircleVector(lunarLander.rotation.rotate, lunarLander.collided),
                 speed: nextGaussian(spec.speed.mean, spec.speed.stdev), // pixels per second
                 rotation: 0,
                 lifetime: nextGaussian(spec.lifetime.mean, spec.lifetime.stdev),    // How long the particle should live, in seconds
-                alive: 0    // How long the particle has been alive, in seconds
+                alive: 0,    // How long the particle has been alive, in seconds
+                collided: lunarLander.collided
             };
 
         return p;
     }
 
-    function nextCircleVector() {
-        let angle = Math.random() * 2 * Math.PI;
+    function nextCircleVector(rotation, collision) {
+        const arcAngle = Math.PI / 2
+        let startAngle = rotation - (arcAngle / 2);
+        let angle = 0
+        if(collision){
+            angle = Math.random() * 2 * Math.PI;
+        }
+        else {
+            angle = startAngle + Math.random() * arcAngle;
+        }
+        
+
         return {
             x: Math.cos(angle),
             y: Math.sin(angle)
@@ -65,7 +84,7 @@ MyGame.systems.ParticleSystem = function(spec) {
     // Update the state of all particles.  This includes removing any that have exceeded their lifetime.
     //
     //------------------------------------------------------------------
-    function update(elapsedTime, lunarLander) {
+    function update(elapsedTime, lunarLander, momentumX, momentumY) {
         let removeMe = [];
 
         //
@@ -74,8 +93,8 @@ MyGame.systems.ParticleSystem = function(spec) {
         
        // Calculate the starting position of the particles based on the lunar lander's location
     let startPosition = {
-        x: lunarLander.location.x,
-        y: lunarLander.location.y
+        x: lunarLander?.location?.x,
+        y: lunarLander?.location?.y
     };
 
     Object.getOwnPropertyNames(particles).forEach(function(value, index, array) {
@@ -83,10 +102,19 @@ MyGame.systems.ParticleSystem = function(spec) {
 
         // Update how long it has been alive
         particle.alive += elapsedTime;
+        
 
         // Update its center
         particle.center.x += (elapsedTime * particle.speed * particle.direction.x);
         particle.center.y += (elapsedTime * particle.speed * particle.direction.y);
+        if(!lunarLander.collided){
+        particle.center.y +=Math.abs(lunarLander.velocityY )
+        particle.center.y += .015 
+        console.log
+        particle.center.x+=lunarLander.velocityX
+        particle.center.x-= .01
+        }
+
 
         // Rotate proportional to its speed
         particle.rotation += particle.speed / 500;
@@ -106,15 +134,18 @@ MyGame.systems.ParticleSystem = function(spec) {
 
         //
         // Generate some new particles
-        for (let particle = 0; particle < 1; particle++) {
-            //
-            // Assign a unique name to each particle
-            particles[nextName++] = create(startPosition);
+        if (lunarLander?.isMoving || lunarLander.collided){
+            for (let particle = 0; particle < 1; particle++) {
+                //
+                // Assign a unique name to each particle
+                particles[nextName++] = create(lunarLander);
+            }
         }
     }
 
     let api = {
         update: update,
+        clearParticles: clearParticles,
         get particles() { return particles; }
     };
 

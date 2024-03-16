@@ -14,10 +14,14 @@
         localStorage.setItem('thrustKey', 'ArrowUp')
         thrustKey = 'ArrowUp'
     }
-    console.log(MyGame)
-    document.getElementById('thrustKeyInput').value = thrustKey
-    document.getElementById('rotateRightKeyInput').value = rotateRightKey
-    document.getElementById('rotateLeftKeyInput').value = rotateLeftKey
+    
+    function initializeMovementChange() {
+        gameState = 'changeControls'
+        document.getElementById('thrustKeyInput').value = thrustKey
+        document.getElementById('rotateRightKeyInput').value = rotateRightKey
+        document.getElementById('rotateLeftKeyInput').value = rotateLeftKey
+        
+    }
 
     function updateThrustKey() {
         let newThrustKey = document.getElementById("thrustKeyInput").value
