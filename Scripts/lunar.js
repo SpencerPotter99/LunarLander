@@ -39,7 +39,6 @@ MyGame.main = (function (systems, renderer, graphics) {
     let winGame = null
     let level = 1
     let countdown = 3;
-    let resetLevel = false
 
     let THRUST = .03
 
@@ -63,22 +62,37 @@ MyGame.main = (function (systems, renderer, graphics) {
     let momentumX = 0
     let momentumY = 0
 
+    let highScores = localStorage.getItem('highScores')
+    let highScoresArray = []
+    if(highScores === null || highScores?.length === 0){
+        highScores = JSON.parse('{"highscore 1": 35, "highscore 2": 40,"highscore 3": 45,"highscore 4": 50,"highscore 5": 55}')
+        localStorage.setItem('highScores' , JSON.stringify(highScores))
+        console.log(highScores)
+    }
+    else {
+        console.log(highScores)
+        highScores = JSON.parse(highScores)
+        console.log( typeof highScores)
+    }
+    console.log(highScores)
+
     //image variables
     let lunarLander = null
     let collision = false
     let collided = false
 
     //terrain variable
+    let maxVariation = 120; // Maximum variation allowed from the previous elevation
     const maxHieght = 990
     const minHeight = 500
     const start = { x: 0, y: getRandom(minHeight, maxHieght) };
     const end = { x: 1000, y: getRandom(minHeight, maxHieght) };
-    let numIterations = 6;
-    let s = 2; // Surface-roughness factor
+    let numIterations = 8;
+    let s = 1.4; // Surface-roughness factor
     let safeZoneWidth = 120;
-    let safeZone = getSafeZone()
-    let safeZone2 = getSafeZone()
-    console.log(level)
+    let safeZone = null
+    let safeZone2 = null
+    getLevel1SafeZone()
     let terrainPoints = generateTerrain(start, end, numIterations, s);
     if(gameState === 'game'){
         initialize()
@@ -92,7 +106,7 @@ MyGame.main = (function (systems, renderer, graphics) {
     let particles = systems.ParticleSystem({
         center: { x: lunarLander?.location?.x, y: lunarLander?.location?.y },
         size: { x: 10, y: 10 },
-        speed: { mean: 50, stdev: 25 },
+        speed: { mean: 200, stdev: 25 },
         lifetime: { mean: 4, stdev: 1 }
     },
     graphics);
@@ -161,7 +175,7 @@ MyGame.main = (function (systems, renderer, graphics) {
         } 
         function rotateLeft(elapsedTime) {
             if(this.fuel >= 0) {
-                spec.rotation.rotate -= Math.PI / 180 * 4
+                spec.rotation.rotate -= Math.PI / 180 * 2
                 if (spec.rotation.rotate < 0) {
                     spec.rotation.rotate += 2 * Math.PI;
                 }
@@ -170,7 +184,7 @@ MyGame.main = (function (systems, renderer, graphics) {
         }
         function rotateRight(elapsedTime) {
             if(this.fuel >= 0) {
-                spec.rotation.rotate += Math.PI / 180 * 4
+                spec.rotation.rotate += Math.PI / 180 * 2
                 if (spec.rotation.rotate >= 2 * Math.PI) {
                     spec.rotation.rotate -= 2 * Math.PI;
                 }
@@ -236,7 +250,6 @@ MyGame.main = (function (systems, renderer, graphics) {
     function gameLoop(timestamp) {
         if(!collided || !winGame){
             overallTimestamp = timestamp
-            console.log(overallTimestamp)
         }
         let elapsedTime = timestamp - lastTimestamp;
         lastTimestamp = timestamp;
@@ -281,12 +294,13 @@ MyGame.main = (function (systems, renderer, graphics) {
         winGameContainer.innerHTML = ''
         let winGameText = document.createElement('h2')
         let scoreText = document.createElement('h2')
-        winGameContainer.style.backgroundColor = "rgba(0, 0, 255, 0.5)";
-        winGameContainer.style.border = "1px solid rgba(0, 0, 255, 0.5)";
+        winGameContainer.style.backgroundColor = "rgba(0, 217, 255, 0.5)";
+        winGameContainer.style.border = "1px solid rgba(0, 204, 255, 0.5)";
         winGameContainer.style.backdropFilter = "blur(10px)";
         winGameContainer.style.boxShadow = "0 1px 12px rgba(0,0,0,0.25)";
         winGameText.textContent = "You Win!"
         scoreText.textContent = "Total Time To Land: " + Math.floor(overallTimestamp / 1000)+'s'
+        checkScore()
   
             
         winGameContainer.appendChild(winGameText)
@@ -316,12 +330,11 @@ MyGame.main = (function (systems, renderer, graphics) {
                     collision = false;
                     countdown = 3;
                     collided = false;
-                    numIterations = 6;
-                    s = 2; // Surface-roughness factor
+                    numIterations = 8;
+                    maxVariation = 100
+                    s = 3; // Surface-roughness factor
                     safeZoneWidth = 75;
                     safeZone = getSafeZone()
-                    safeZone2 = getSafeZone()
-                    console.log(level)
                     terrainPoints = generateTerrain(start, end, numIterations, s);
                     particles.clearParticles()
                     particlesFire.clearParticles()
@@ -338,14 +351,13 @@ MyGame.main = (function (systems, renderer, graphics) {
             } else {
                 countdown--;
                 render()
-                console.log(countdown) // Decrement the countdown value
             }
         }, 1000); // Run the countdown every second (1000 milliseconds)
     }
 
     function render(elapsedTime) {
         drawTerrain(terrainPoints, safeZone);
-        if(!collided){
+        if(!collided && lunarLander.fuel >0){
         renderParticles.render()
         }
         renderImage(lunarLander)
@@ -372,7 +384,7 @@ MyGame.main = (function (systems, renderer, graphics) {
                 exploded=1
             }
         }
-        if(lunarLander.isMoving){
+        if(lunarLander.isMoving && lunarLander.fuel >0){
             thrustSound.play()
         }
         if(winGame){
@@ -422,8 +434,8 @@ MyGame.main = (function (systems, renderer, graphics) {
         fuelContainer.appendChild(time);
         fuelContainer.appendChild(rotationText);
         if(winGame && level=== 1){
-            winGameContainer.style.backgroundColor = "rgba(0, 0, 255, 0.5)";
-            winGameContainer.style.border = "1px solid rgba(0, 0, 255, 0.5)";
+            winGameContainer.style.backgroundColor = "rgba(0, 217, 255, 0.5)";
+            winGameContainer.style.border = "1px solid rgba(0, 204, 255, 0.5)";
             winGameContainer.style.backdropFilter = "blur(10px)";
             winGameContainer.style.boxShadow = "0 1px 12px rgba(0,0,0,0.25)";
             
@@ -482,40 +494,112 @@ MyGame.main = (function (systems, renderer, graphics) {
         ctx.lineTo(points[0].x, points[0].y);
     
         for (let i = 1; i < points.length; i++) {
-            if (points[i].x >= safeZone.x - 20 && points[i].x <= safeZone.x + safeZoneWidth) {
-                // Draw the safe zone
-                ctx.lineTo(safeZone.x, safeZone.y);
-                ctx.lineTo(safeZone.x,1000)
-                ctx.lineTo(0,1000)
-                ctx.fillStyle = "blue"; // Set the fill color
-                ctx.fill();
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(safeZone.x, safeZone.y);
-                ctx.shadowBlur = 20; // Set shadow blur for glowing effect
-                ctx.shadowColor = "lime"; // Set shadow color to green
-                ctx.strokeStyle = "lime"; // Set stroke color to green
-                ctx.lineWidth = 8; // Set line width for visibility
-                ctx.lineTo(safeZone.x + safeZoneWidth, safeZone.y);
-                ctx.stroke(); // Stroke the safe zone line
-    
-                ctx.shadowBlur = 0; // Reset shadow blur
-                ctx.shadowColor = "transparent"; // Reset shadow color
-                ctx.strokeStyle = "transparent"; // Reset stroke color
-                ctx.lineWidth = 8; // Reset line width
-                ctx.beginPath()
-                ctx.moveTo(safeZone.x, 1000)
-                ctx.lineTo(safeZone.x,safeZone.y)
-                ctx.lineTo(safeZone.x + safeZoneWidth, safeZone.y)
-                ctx.lineTo(safeZone.x + safeZoneWidth,1000)
-                ctx.fillStyle = "blue"; // Set the fill color
-                ctx.fill();
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(safeZone.x + safeZoneWidth,1000)
-                ctx.lineTo(safeZone.x + safeZoneWidth, safeZone.y);
-            } else {
-                ctx.lineTo(points[i].x, points[i].y);
+            if(level === 2){
+                if (points[i].x >= safeZone.x - 20 && points[i].x <= safeZone.x + safeZoneWidth) {
+                    // Draw the safe zone
+                    ctx.lineTo(safeZone.x, safeZone.y);
+                    ctx.lineTo(safeZone.x,1000)
+                    ctx.lineTo(0,1000)
+                    ctx.fillStyle = "blue"; // Set the fill color
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(safeZone.x, safeZone.y);
+                    ctx.shadowBlur = 20; // Set shadow blur for glowing effect
+                    ctx.shadowColor = "lime"; // Set shadow color to green
+                    ctx.strokeStyle = "lime"; // Set stroke color to green
+                    ctx.lineWidth = 8; // Set line width for visibility
+                    ctx.lineTo(safeZone.x + safeZoneWidth, safeZone.y);
+                    ctx.stroke(); // Stroke the safe zone line
+        
+                    ctx.shadowBlur = 0; // Reset shadow blur
+                    ctx.shadowColor = "transparent"; // Reset shadow color
+                    ctx.strokeStyle = "transparent"; // Reset stroke color
+                    ctx.lineWidth = 8; // Reset line width
+                    ctx.beginPath()
+                    ctx.moveTo(safeZone.x, 1000)
+                    ctx.lineTo(safeZone.x,safeZone.y)
+                    ctx.lineTo(safeZone.x + safeZoneWidth, safeZone.y)
+                    ctx.lineTo(safeZone.x + safeZoneWidth,1000)
+                    ctx.fillStyle = "blue"; // Set the fill color
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(safeZone.x + safeZoneWidth,1000)
+                    ctx.lineTo(safeZone.x + safeZoneWidth, safeZone.y);
+                } else {
+                    ctx.lineTo(points[i].x, points[i].y);
+                }
+            }
+            else{
+                if (points[i].x >= safeZone.x - 20 && points[i].x <= safeZone.x + safeZoneWidth ) {
+                    // Draw the safe zone
+                    ctx.lineTo(safeZone.x, safeZone.y);
+                    ctx.lineTo(safeZone.x,1000)
+                    ctx.lineTo(0,1000)
+                    ctx.fillStyle = "blue"; // Set the fill color
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(safeZone.x, safeZone.y);
+                    ctx.shadowBlur = 20; // Set shadow blur for glowing effect
+                    ctx.shadowColor = "lime"; // Set shadow color to green
+                    ctx.strokeStyle = "lime"; // Set stroke color to green
+                    ctx.lineWidth = 8; // Set line width for visibility
+                    ctx.lineTo(safeZone.x + safeZoneWidth, safeZone.y);
+                    ctx.stroke(); // Stroke the safe zone line
+        
+                    ctx.shadowBlur = 0; // Reset shadow blur
+                    ctx.shadowColor = "transparent"; // Reset shadow color
+                    ctx.strokeStyle = "transparent"; // Reset stroke color
+                    ctx.lineWidth = 8; // Reset line width
+                    ctx.beginPath()
+                    ctx.moveTo(safeZone.x, 1000)
+                    ctx.lineTo(safeZone.x,safeZone.y)
+                    ctx.lineTo(safeZone.x + safeZoneWidth, safeZone.y)
+                    ctx.lineTo(safeZone.x + safeZoneWidth,1000)
+                    ctx.fillStyle = "blue"; // Set the fill color
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(safeZone.x + safeZoneWidth,1000)
+                    ctx.lineTo(safeZone.x + safeZoneWidth, safeZone.y);
+                } else if (points[i].x >= safeZone2.x - 20 && points[i].x <= safeZone2.x + safeZoneWidth ) {
+                    // Draw the safe zone
+                    ctx.lineTo(safeZone2.x, safeZone2.y);
+                    ctx.lineTo(safeZone2.x,1000)
+                    ctx.lineTo(0,1000)
+                    ctx.fillStyle = "blue"; // Set the fill color
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(safeZone2.x, safeZone2.y);
+                    ctx.shadowBlur = 20; // Set shadow blur for glowing effect
+                    ctx.shadowColor = "lime"; // Set shadow color to green
+                    ctx.strokeStyle = "lime"; // Set stroke color to green
+                    ctx.lineWidth = 8; // Set line width for visibility
+                    ctx.lineTo(safeZone2.x + safeZoneWidth, safeZone2.y);
+                    ctx.stroke(); // Stroke the safe zone line
+        
+                    ctx.shadowBlur = 0; // Reset shadow blur
+                    ctx.shadowColor = "transparent"; // Reset shadow color
+                    ctx.strokeStyle = "transparent"; // Reset stroke color
+                    ctx.lineWidth = 8; // Reset line width
+                    ctx.beginPath()
+                    ctx.moveTo(safeZone2.x, 1000)
+                    ctx.lineTo(safeZone2.x,safeZone2.y)
+                    ctx.lineTo(safeZone2.x + safeZoneWidth, safeZone2.y)
+                    ctx.lineTo(safeZone2.x + safeZoneWidth,1000)
+                    ctx.fillStyle = "blue"; // Set the fill color
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(safeZone2.x + safeZoneWidth,1000)
+                    ctx.lineTo(safeZone2.x + safeZoneWidth, safeZone2.y);
+                }
+                else {
+                    ctx.lineTo(points[i].x, points[i].y);
+                }
             }
         }
     
@@ -539,12 +623,22 @@ MyGame.main = (function (systems, renderer, graphics) {
     }
 
     function computeElevation(a, b, s) {
-        const maxVariation = 150; // Maximum variation allowed from the previous elevation
+
         const prevElevation = (a.y + b.y) / 2;
-        const minElevation = Math.max(minHeight, prevElevation - maxVariation);
-        const maxElevation = Math.min(maxHieght, prevElevation + maxVariation);
+        const lineLength = (b.x-a.x)
+        console.log(lineLength)
+        const minElevation = Math.max(minHeight, prevElevation - lineLength);
+        const maxElevation = Math.min(maxHieght, prevElevation + lineLength);
         const elevation = getRandom(minElevation, maxElevation);
         return elevation;
+    }
+
+    function getLevel1SafeZone(){
+        safeZone = { x: getRandom(50, 370), y: getRandom(minHeight, maxHieght) };
+        safeZone2 = {
+            x: getRandom(450, 850), // Ensure second safe zone is at least 100 units away from the first one
+            y: getRandom(minHeight, maxHieght)
+        };
     }
 
     function getSafeZone() {
@@ -553,6 +647,7 @@ MyGame.main = (function (systems, renderer, graphics) {
     }
 
     function midpointDisplacement(points, s) {
+        console.log(points)
         const newPoints = [points[0]];
         for (let i = 0; i < points.length - 1; i++) {
             const a = points[i];
@@ -573,18 +668,30 @@ MyGame.main = (function (systems, renderer, graphics) {
         for (let i = 0; i < numIterations; i++) {
             points = midpointDisplacement(points, s);
         }
+        console.log(points)
         
         let filteredPoints = points.filter(point => {
+            if(level === 1){
+                return (point.x < safeZone.x - 20 || point.x > safeZone.x + safeZoneWidth) && (point.x < safeZone2.x - 20 || point.x > safeZone2.x + safeZoneWidth);
+            }
             return point.x < safeZone.x - 20 || point.x > safeZone.x + safeZoneWidth;
         });
     
         const safeZoneStart = { x: safeZone.x - 20, y: safeZone.y, safe: true };
         const safeZoneEnd = { x: safeZone.x + safeZoneWidth, y: safeZone.y, safe: true };
+
+        if(level===1){
+            const safeZone2Start = { x: safeZone2.x - 20, y: safeZone2.y, safe: true };
+            const safeZone2End = { x: safeZone2.x + safeZoneWidth, y: safeZone2.y, safe: true };
+            filteredPoints = filteredPoints.concat(safeZone2Start);
+            filteredPoints = filteredPoints.concat(safeZone2End);
+        }
     
         filteredPoints = filteredPoints.concat(safeZoneStart);
         filteredPoints = filteredPoints.concat(safeZoneEnd);
     
         filteredPoints.sort((a, b) => a.x - b.x);
+        console.log(filteredPoints)
     
         // Mark points outside the safe zone as 'false' for the 'safe' property
         filteredPoints.forEach(point => {
@@ -634,19 +741,31 @@ MyGame.main = (function (systems, renderer, graphics) {
     }
 
     function collisionDetection() {
+        let collisionSafeZone1 = (lunarLander.location.x>= safeZone.x && lunarLander.location.x <= safeZone.x + safeZoneWidth && Math.abs(lunarLander.location.y - safeZone.y) <= 30)
         for(let x=0; x<terrainPoints.length-1; x++) {
-                collision = lineCircleIntersection(terrainPoints[x], terrainPoints[x + 1], lunarLander.circle)
+            collision = lineCircleIntersection(terrainPoints[x], terrainPoints[x + 1], lunarLander.circle)
             if(collision.intersect){
-                if(collision.safe && lunarLander.location.x>= safeZone.x && lunarLander.location.x <= safeZone.x + safeZoneWidth && Math.abs(lunarLander.location.y - safeZone.y) <= 30 && lunarLander.rotation && ((lunarLander.rotation.rotate* 180 / Math.PI) >= 355 || (lunarLander.rotation.rotate* 180 / Math.PI) <= 5) && Math.floor(Math.abs(momentumX + momentumY) / 0.1)<=10){
-                    console.log("TEST")
-                    winGame = true
+                if(level===1){
+                    let collisionSafeZone2 = (lunarLander.location.x>= safeZone2.x && lunarLander.location.x <= safeZone2.x + safeZoneWidth && Math.abs(lunarLander.location.y - safeZone2.y) <= 30)
+                    console.log(collisionSafeZone2)
+                    if(collisionSafeZone1 || collisionSafeZone2){
+                        if(collision.safe && lunarLander.rotation && ((lunarLander.rotation.rotate* 180 / Math.PI) >= 355 || (lunarLander.rotation.rotate* 180 / Math.PI) <= 5) && Math.floor(Math.abs(momentumX + momentumY) / 0.1)<=10){
+                            winGame = true
+                        }
+                    }
+                    collided = true
+                    lunarLander.collided = true
                 }
-                    
+                else{
+                    if(collision.safe && collisionSafeZone1 && lunarLander.rotation && ((lunarLander.rotation.rotate* 180 / Math.PI) >= 355 || (lunarLander.rotation.rotate* 180 / Math.PI) <= 5) && Math.floor(Math.abs(momentumX + momentumY) / 0.1)<=10){
+                        winGame = true 
+                    }
+
                 collided = true
                 lunarLander.collided = true
+                }
             }
         }
-        //TODO: make it so they cant go off the screen
     }
 
     function lineCircleIntersection(pt1, pt2, circle) {
@@ -676,5 +795,35 @@ MyGame.main = (function (systems, renderer, graphics) {
         return { intersect: false, safe: false };
     }
 
+    function checkScore() {
+        // Convert highScores object to an array of objects
+        for (let key in highScores) {
+            highScoresArray.push({ name: key, score: highScores[key] });
+        }
+
+        // Add the new score to highScoresArray
+        highScoresArray.push({ name: 'New Score', score: Math.floor(overallTimestamp / 1000) });
+
+        console.log(highScoresArray)
+        // Sort highScoresArray by score in ascending order
+        highScoresArray.sort(function(a, b) {
+            return a.score - b.score;
+        });
+        console.log(highScoresArray)
+
+        // Keep the lowest 5 high scores
+        let lowestHighScoresArray = highScoresArray.slice(0, 5);
+
+        // Update highScores object with the combined scores
+        let updatedHighScores = {};
+        for (let i = 0; i < lowestHighScoresArray.length; i++) {
+            updatedHighScores["highscore " + (i+1)] = lowestHighScoresArray[i].score;
+        }
+
+        console.log(updatedHighScores)
+        // Update localStorage with the updated high scores
+        localStorage.setItem('highScores', JSON.stringify(updatedHighScores));
+    }
+    console.log(typeof highScores)
     
 }(MyGame.systems, MyGame.render, MyGame.graphics));

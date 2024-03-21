@@ -8,6 +8,24 @@ html, body {
     display: flex;
     flex-direction: column;
     align-items: center;
+
+}
+.menu h1 {
+    padding: 10px 20px;
+    border-radius: 8px;
+    backdrop-filter:  blur(20px);
+    background-color: rgba(0, 217, 255, 0.6);
+    box-shadow: 0 1px 12px rgba(0,0,0,0.25);
+    border:  1px solid rgba(0,204,255, 0.6);
+}
+
+.menu li {
+    padding: 10px 20px;
+    border-radius: 8px;
+    backdrop-filter:  blur(20px);
+    background-color: rgba(0, 217, 255, 0.6);
+    box-shadow: 0 1px 12px rgba(0,0,0,0.25);
+    border:  1px solid rgba(0,204,255, 0.6);
 }
 
 .buttons {
@@ -17,10 +35,16 @@ html, body {
     width: 250px; /* Set a fixed width */
     height: 100px; /* Set a fixed height */
     cursor: pointer;
+    border-radius: 8px;
+    backdrop-filter:  blur(20px);
+    background-color: rgba(0, 217, 255, 0.6);
+    box-shadow: 0 1px 12px rgba(0,0,0,0.25);
+    border:  1px solid rgba(0,204,255, 0.6);
 }
 .buttons h4 {
     margin: 0;
     text-align: center; /* Align text to the center */
+    
 }
 
 .lunar-div {
@@ -43,9 +67,9 @@ html, body {
     width: 250px;
     border-radius: 8px;
     backdrop-filter:  blur(20px);
-    background-color: rgba(0,0,255, 0.3);
+    background-color: rgba(0, 0, 255, 0.6);
     box-shadow: 0 1px 12px rgba(0,0,0,0.25);
-    border:  1px solid rgba(0,0,255, 0.3);
+    border:  1px solid rgba(0,0,255, 0.6);
 }
 
 .lunar-info {

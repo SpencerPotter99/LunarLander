@@ -13,9 +13,9 @@ MyGame.systems.ParticleSystem = function(spec) {
     //
     //------------------------------------------------------------------
     function create(lunarLander) {
-        const offsetX = 0; // Adjust if necessary
+        const offsetX = 0; 
         const offsetY = 10;
-        const rotatedOffsetX = offsetX * Math.cos(lunarLander.rotation.rotate) - offsetY * Math.sin(lunarLander.rotation.rotate);
+        const rotatedOffsetX = offsetX * Math.cos(lunarLander.rotation.rotate) - offsetY * Math.sin(lunarLander.rotation.rotate); // Adjusted signs here
         const rotatedOffsetY = offsetX * Math.sin(lunarLander.rotation.rotate) + offsetY * Math.cos(lunarLander.rotation.rotate);
         let p = {
                 center: {x: lunarLander.location.x + rotatedOffsetX, y: lunarLander.location.y + rotatedOffsetY},
@@ -32,14 +32,17 @@ MyGame.systems.ParticleSystem = function(spec) {
     }
 
     function nextCircleVector(rotation, collision) {
-        const arcAngle = Math.PI / 2
-        let startAngle = rotation - (arcAngle / 2);
+        const arcAngle = Math.PI / 4
+        let startAngle = rotation - ((arcAngle - (Math.PI / 1.25)) / 2);
         let angle = 0
         if(collision){
             angle = Math.random() * 2 * Math.PI;
         }
         else {
             angle = startAngle + Math.random() * arcAngle;
+            console.log(rotation)
+            console.log(angle)
+
         }
         
 
@@ -110,8 +113,6 @@ MyGame.systems.ParticleSystem = function(spec) {
         if(!lunarLander.collided){
         particle.center.y +=Math.abs(lunarLander.velocityY )
         particle.center.y += .015 
-        console.log
-        particle.center.x+=lunarLander.velocityX
         particle.center.x-= .01
         }
 

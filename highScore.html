@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lunar Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="menu">
+        <h1>High Scores</h1>
+        <ul id="highScoresList"></ul>
+        <button class="buttons" onclick="window.location.href='lunarGame.html'">
+            <h4>New Game</h4>
+        </button>
+    </div>
+
+    <script>
+        let highScores = localStorage.getItem('highScores');
+        if (highScores === null || highScores?.length === 0) {
+            highScores = JSON.stringify({
+                "highscore 1": 35,
+                "highscore 2": 40,
+                "highscore 3": 45,
+                "highscore 4": 50,
+                "highscore 5": 55
+            });
+            localStorage.setItem('highScores', highScores);
+        } else {
+            highScores = JSON.parse(highScores);
+        }
+
+        // Get the <ul> element
+        const highScoresList = document.getElementById('highScoresList');
+
+        // Loop through the high scores and create list items
+        for (let key in highScores) {
+            const listItem = document.createElement('li');
+            listItem.textContent = `${key}: ${highScores[key]}s to land`;
+            highScoresList.appendChild(listItem);
+        }
+
+    </script>
+</body>
+</html>
